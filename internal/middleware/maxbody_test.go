@@ -8,13 +8,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMaxBody_UnderLimit(t *testing.T) {
 	handler := MaxBody(1024)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(body)
 	}))
@@ -49,7 +48,7 @@ func TestMaxBody_ExactLimit(t *testing.T) {
 	body := "12345"
 	handler := MaxBody(int64(len(body)))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(data)
 	}))
@@ -79,7 +78,7 @@ func TestMaxBody_ContentLengthExceedsLimit(t *testing.T) {
 func TestMaxBody_EmptyBody(t *testing.T) {
 	handler := MaxBody(1024)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Empty(t, data)
 		w.WriteHeader(http.StatusOK)
 	}))

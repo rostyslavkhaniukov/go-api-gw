@@ -51,7 +51,7 @@ func (s *RedisStore) Set(ctx context.Context, tok *Token) error {
 
 	ttl := time.Until(tok.ExpiresAt)
 	if ttl <= 0 {
-		slog.Warn("storing already-expired token", "api_key", tok.APIKey, "expires_at", tok.ExpiresAt)
+		slog.WarnContext(ctx, "storing already-expired token", "api_key", tok.APIKey, "expires_at", tok.ExpiresAt)
 		ttl = time.Second
 	} else if ttl < time.Second {
 		ttl = time.Second
