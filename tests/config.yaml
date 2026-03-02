@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  metrics_port: 9090
+  read_timeout: 10s
+  write_timeout: 15s
+  shutdown_timeout: 10s
+
+redis:
+  addr: redis:6379
+  password: ""
+  db: 0
+
+upstreams:
+  - prefix: /api/v1/users
+    url: http://upstream-1:8081
+    strip_prefix: false
+  - prefix: /api/v1/products
+    url: http://upstream-2:8082
+    strip_prefix: false
+
+rate_limit:
+  window: 60s

@@ -1,0 +1,108 @@
+version: "3"
+
+tasks:
+  test:
+    desc: Run all tests with race detector
+    cmds:
+      - go test -race -count=1 ./...
+
+  test-cover:
+    desc: Run tests with coverage report
+    cmds:
+      - go test -race -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: Run golangci-lint v2
+    cmds:
+      - golangci-lint run ./...
+
+  vulncheck:
+    desc: Scan dependencies for known vulnerabilities
+    cmds:
+      - govulncheck ./...
+
+  mod:
+    desc: Verify module hygiene
+    cmds:
+      - go mod tidy
+      - git diff --exit-code go.mod go.sum
+
+  check:
+    desc: Run all checks (vet, lint, vulncheck, mod, build, test)
+    cmds:
+      - task: vet
+      - task: lint
+      - task: vulncheck
+      - task: mod
+      - task: build
+      - task: test
+
+  build:
+    desc: Build the binary
+    cmds:
+      - go build -o api-gw ./cmd/api-gw
+
+  run:
+    desc: Run the application
+    cmds:
+      - go run ./cmd/api-gw
+
+  seed:
+    desc: Seed tokens into Redis
+    cmds:
+      - go run ./cmd/seed tests/tokens.json
+
+  docker-build:
+    desc: Build Docker image
+    cmds:
+      - docker build -t api-gw .
+
+  compose-up:
+    desc: Start all services with Docker Compose
+    cmds:
+      - docker compose up -d --build
+
+  compose-down:
+    desc: Stop all services
+    cmds:
+      - docker compose down
+
+  k6-smoke:
+    desc: Run k6 smoke tests
+    cmds:
+      - k6 run tests/k6/smoke.js {{.CLI_ARGS}}
+
+  k6-load:
+    desc: Run k6 load tests
+    cmds:
+      - k6 run tests/k6/load.js {{.CLI_ARGS}}
+
+  k6-stress:
+    desc: Run k6 stress tests
+    cmds:
+      - k6 run tests/k6/stress.js {{.CLI_ARGS}}
+
+  k6-spike:
+    desc: Run k6 spike tests
+    cmds:
+      - k6 run tests/k6/spike.js {{.CLI_ARGS}}
+
+  k6-rate-limit:
+    desc: Run k6 rate limit and auth failure tests
+    cmds:
+      - k6 run tests/k6/rate-limit.js {{.CLI_ARGS}}
+
+  k6:
+    desc: Run all k6 test suites sequentially
+    cmds:
+      - task: k6-smoke
+      - task: k6-load
+      - task: k6-stress
+      - task: k6-spike
+      - task: k6-rate-limit

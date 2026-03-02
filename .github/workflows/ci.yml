@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.10
+
+  vulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: ""
+          go-version-file: go.mod
+
+  tidy:
+    name: Module hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Tidy
+        run: go mod tidy
+
+      - name: Check for drift
+        run: git diff --exit-code go.mod go.sum
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build ./cmd/...
+
+      - name: Test
+        run: go test -race -count=1 -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        run: |
+          {
+            echo '## Test Coverage'
+            echo ''
+            echo '| Package | Coverage |'
+            echo '|---------|----------|'
+            go tool cover -func=coverage.out | awk '
+              /^total:/ { total = $NF; next }
+              {
+                # $1 is "module/package/file.go:line:" — strip filename to get package
+                n = split($1, parts, "/")
+                pkg = parts[1]
+                for (i = 2; i < n; i++) pkg = pkg "/" parts[i]
+                # Strip module prefix (first path segment)
+                idx = index(pkg, "/")
+                if (idx > 0) pkg = substr(pkg, idx + 1)
+
+                funcs[pkg] += 1
+                gsub(/%/, "", $NF)
+                cov[pkg] += $NF
+                if (!(pkg in seen)) { order[++count] = pkg; seen[pkg] = 1 }
+              }
+              END {
+                for (i = 1; i <= count; i++) {
+                  pkg = order[i]
+                  avg = cov[pkg] / funcs[pkg]
+                  printf "| `%s` | %.1f%% |\n", pkg, avg
+                }
+                printf "| **Total** | **%s** |\n", total
+              }
+            '
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,12 @@
+/api-gw
+/seed
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+.env
+coverage.out
+coverage.html

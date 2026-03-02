@@ -1,0 +1,56 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  upstream-1:
+    build: ./tests/upstream-1
+    environment:
+      PORT: "8081"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  upstream-2:
+    build: ./tests/upstream-2
+    environment:
+      PORT: "8082"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  api-gw:
+    build: .
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    command: ["--config", "/config.yaml"]
+    volumes:
+      - ./tests/config.yaml:/config.yaml:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      upstream-1:
+        condition: service_healthy
+      upstream-2:
+        condition: service_healthy
+
+  seed:
+    build: .
+    entrypoint: ["/seed", "--config", "/config.yaml", "/data/tokens.json"]
+    volumes:
+      - ./tests/config.yaml:/config.yaml:ro
+      - ./tests/tokens.json:/data/tokens.json:ro
+    depends_on:
+      redis:
+        condition: service_healthy

@@ -1,0 +1,125 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    # bugs
+    - bodyclose
+    - durationcheck
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - makezero
+    - nilerr
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - copyloopvar
+    - intrange
+
+    # performance
+    - perfsprint
+    - prealloc
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+
+    # style & maintainability
+    - gocritic
+    - gosec
+    - revive
+    - sloglint
+    - predeclared
+    - mirror
+    - reassign
+    - testifylint
+    - nolintlint
+    - whitespace
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+
+    exhaustive:
+      check:
+        - switch
+        - map
+
+    gocritic:
+      settings:
+        captLocal:
+          paramsOnly: false
+        underef:
+          skipRecvDeref: false
+
+    gosec:
+      excludes:
+        - G117 # struct field name matches secret pattern (false positive on config structs)
+        - G404 # math/rand — intentional for non-security request IDs and rate limiter members
+        - G706 # log injection — false positive for slog structured logging
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+
+    nakedret:
+      max-func-lines: 0
+
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+
+    perfsprint:
+      strconcat: false
+
+    revive:
+      rules:
+        - name: unexported-return
+          disabled: true
+
+    sloglint:
+      context: scope
+
+    staticcheck:
+      checks:
+        - all
+        - -ST1000
+        - -ST1016
+        - -QF1001
+
+  exclusions:
+    warn-unused: true
+    presets:
+      - std-error-handling
+      - common-false-positives
+    rules:
+      - path: _test\.go
+        linters:
+          - bodyclose
+          - errcheck
+          - gosec
+          - noctx
+      - path: tests/
+        linters:
+          - errcheck
+          - gosec
+      - path: cmd/
+        linters:
+          - sloglint
+
+formatters:
+  enable:
+    - goimports
+
+  settings:
+    goimports:
+      local-prefixes:
+        - api-gw
+
+run:
+  timeout: 5m
+  go: "1.25.7"

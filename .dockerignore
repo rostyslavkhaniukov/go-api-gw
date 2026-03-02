@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+Dockerfile
+README.md
+Taskfile.yml
+task.md
+coverage.out
+coverage.html
+*.test
+tokens.json
