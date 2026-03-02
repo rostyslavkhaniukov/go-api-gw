@@ -120,4 +120,4 @@ type nonFlusherWriter struct {
 
 func (w *nonFlusherWriter) Header() http.Header         { return w.header }
 func (w *nonFlusherWriter) Write(b []byte) (int, error) { return len(b), nil }
-func (w *nonFlusherWriter) WriteHeader(int)              {}
+func (w *nonFlusherWriter) WriteHeader(int)             {}
